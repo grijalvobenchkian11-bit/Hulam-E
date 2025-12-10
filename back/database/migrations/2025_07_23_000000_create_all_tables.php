@@ -75,13 +75,6 @@ return new class extends Migration
             $table->integer('finished_at')->nullable();
         });
 
-        // Migrations table
-        Schema::create('migrations', function (Blueprint $table) {
-            $table->increments('id');
-            $table->string('migration', 255);
-            $table->integer('batch');
-        });
-
         // Notifications table
         Schema::create('notifications', function (Blueprint $table) {
             $table->char('id', 36)->primary();
@@ -186,8 +179,8 @@ return new class extends Migration
 
         // Rental messages table
         Schema::create('rental_messages', function (Blueprint $table) {
-            $table->increments('id');
-            $table->integer('rental_id');
+            $table->bigIncrements('id');
+            $table->unsignedBigInteger('rental_id');
             $table->string('renter_email', 255);
             $table->string('sender_name', 255);
             $table->string('sender_email', 255);
@@ -196,6 +189,12 @@ return new class extends Migration
             $table->timestamp('created_at')->useCurrent();
             $table->index('rental_id', 'idx_rental_id');
             $table->index('renter_email', 'idx_renter_email');
+
+            // Optional FK:
+            // $table->foreign('rental_id')
+            //       ->references('id')
+            //       ->on('rentals')
+            //       ->onDelete('cascade');
         });
 
         // Sessions table
@@ -251,11 +250,10 @@ return new class extends Migration
         Schema::dropIfExists('personal_access_tokens');
         Schema::dropIfExists('password_reset_tokens');
         Schema::dropIfExists('notifications');
-        Schema::dropIfExists('migrations');
         Schema::dropIfExists('job_batches');
         Schema::dropIfExists('jobs');
         Schema::dropIfExists('failed_jobs');
         Schema::dropIfExists('cache_locks');
         Schema::dropIfExists('cache');
     }
-}; 
+};

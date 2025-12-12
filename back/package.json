@@ -3,7 +3,7 @@
     "private": true,
     "type": "module",
     "scripts": {
-        "start": "node src/back/server.js",
+        "start": "node /opt/render/project/src/back/server.js",
         
         "build": "vite build",
         "dev": "vite"

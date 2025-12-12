@@ -22,11 +22,11 @@ WORKDIR /var/www
 # Copy the application files into the container (from 'back/' folder to '/var/www' in container)
 COPY ./back /var/www
 
-# Verify that files, including composer.json, are copied correctly
-RUN ls -la /var/www
+# Clear Composer cache (to avoid issues with corrupted files)
+RUN composer clear-cache
 
 # Install PHP dependencies using Composer
-RUN composer install --no-dev --optimize-autoloader
+RUN composer install --no-dev --optimize-autoloader -vvv
 
 # Expose port 80 to access the app
 EXPOSE 80

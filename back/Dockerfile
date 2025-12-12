@@ -16,13 +16,16 @@ RUN apt-get update && apt-get install -y \
 # Install Composer (PHP dependency manager)
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
-# Set the working directory in the container
+# Set the working directory inside the container
 WORKDIR /var/www
 
-# Copy the application files into the container
+# Copy the application files into the container (from 'back/' folder to '/var/www' in container)
 COPY ./back /var/www
 
-# Install PHP dependencies
+# Verify that files, including composer.json, are copied correctly
+RUN ls -la /var/www
+
+# Install PHP dependencies using Composer
 RUN composer install --no-dev --optimize-autoloader
 
 # Expose port 80 to access the app

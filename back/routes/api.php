@@ -5,7 +5,6 @@ Route::options('/{any}', function () {
     return response()->json([], 200);
 })->where('any', '.*');
 
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Mail;
 use App\Http\Controllers\AuthController;

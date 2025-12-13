@@ -3,9 +3,11 @@
 return [
 
     'paths' => [
-        'api/*',
-        'sanctum/csrf-cookie',
-    ],
+    'api/*',
+    'auth/*',   // ← ADD THIS
+    'sanctum/csrf-cookie',
+],
+
 
     'allowed_methods' => ['*'],
 

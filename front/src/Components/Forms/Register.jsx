@@ -83,7 +83,7 @@ const Register = () => {
 
     try {
       const response = await axios.post(
-        `${API_URL}/register`,
+        `${API_URL}/auth/register`,
         {
           name: formData.name.trim(),
           email: formData.email.trim().toLowerCase(),

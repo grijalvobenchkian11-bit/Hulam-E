@@ -16,8 +16,8 @@ RUN apt-get update && apt-get install -y \
         mbstring \
         xml \
         ctype \
-        tokenizer \
         bcmath
+
 
 COPY . .
 

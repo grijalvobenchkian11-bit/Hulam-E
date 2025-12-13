@@ -1,3 +1,4 @@
+<?php
 use Illuminate\Http\Request;
 
 Route::options('/{any}', function () {

@@ -6,7 +6,8 @@ import { Link, useNavigate } from "react-router-dom";
 import TermsModal from "../PrivacyPolicy/TermsModal";
 import AlertMessage from "../Common/AlertMessage";
 
-const API_URL = process.env.REACT_APP_API_URL;
+const API_URL = process.env.REACT_APP_API_URL; 
+// example: https://hulame-back.onrender.com/api
 
 const Register = () => {
   const [formData, setFormData] = useState({
@@ -19,22 +20,42 @@ const Register = () => {
 
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
   const [alert, setAlert] = useState({ show: false, type: "", message: "" });
   const [fieldErrors, setFieldErrors] = useState({});
   const [showTermsModal, setShowTermsModal] = useState(false);
-  const navigate = useNavigate();
 
   const showAlert = (type, message) => {
     setAlert({ show: true, type, message });
-    setTimeout(() => setAlert({ show: false, type: "", message: "" }), 5000);
+    setTimeout(() => {
+      setAlert({ show: false, type: "", message: "" });
+    }, 5000);
+  };
+
+  const validateForm = () => {
+    const errors = {};
+
+    if (!formData.name.trim()) errors.name = "Full name is required";
+    if (!formData.email.trim()) errors.email = "Email is required";
+    if (!formData.password) errors.password = "Password is required";
+    if (formData.password !== formData.password_confirmation) {
+      errors.password_confirmation = "Passwords do not match";
+    }
+    if (!formData.acceptTerms) {
+      errors.acceptTerms = "You must accept the terms and conditions";
+    }
+
+    setFieldErrors(errors);
+    return Object.keys(errors).length === 0;
   };
 
   const togglePasswordVisibility = () => {
-    setShowPassword(!showPassword);
+    setShowPassword((prev) => !prev);
   };
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
+
     setFormData((prev) => ({
       ...prev,
       [name]: type === "checkbox" ? checked : value,
@@ -43,36 +64,25 @@ const Register = () => {
     if (fieldErrors[name]) {
       setFieldErrors((prev) => ({ ...prev, [name]: undefined }));
     }
-  };
 
-  const validateForm = () => {
-    const errors = {};
-    if (!formData.name.trim()) errors.name = "Name is required";
-    if (!formData.email.trim()) errors.email = "Email is required";
-    if (!formData.password) errors.password = "Password is required";
-    if (formData.password !== formData.password_confirmation)
-      errors.password_confirmation = "Passwords do not match";
-    if (!formData.acceptTerms)
-      errors.acceptTerms = "You must accept the terms";
-
-    setFieldErrors(errors);
-    return Object.keys(errors).length === 0;
+    if (alert.show) {
+      setAlert({ show: false, type: "", message: "" });
+    }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
     if (!validateForm()) {
-      showAlert("error", "Please fix the errors below.");
+      showAlert("error", "Please correct the errors below.");
       return;
     }
 
     setLoading(true);
-    setAlert({ show: false, type: "", message: "" });
 
     try {
-      const response = await axios.post(
-        `${API_URL}/register`,
+      await axios.post(
+        `${API_URL}/auth/register`,
         {
           name: formData.name.trim(),
           email: formData.email.trim().toLowerCase(),
@@ -83,7 +93,7 @@ const Register = () => {
           headers: {
             "Content-Type": "application/json",
           },
-          withCredentials: false, // 🚫 IMPORTANT
+          withCredentials: false, // IMPORTANT for token-based auth
         }
       );
 
@@ -105,9 +115,23 @@ const Register = () => {
     }
   };
 
+  useEffect(() => {
+    const handleClick = () => {
+      if (alert.show) {
+        setAlert({ show: false, type: "", message: "" });
+      }
+    };
+
+    document.addEventListener("click", handleClick);
+    return () => document.removeEventListener("click", handleClick);
+  }, [alert.show]);
+
   const handleTermsAcceptance = () => {
-    setFormData({ ...formData, acceptTerms: true });
+    setFormData((prev) => ({ ...prev, acceptTerms: true }));
     setShowTermsModal(false);
+    if (fieldErrors.acceptTerms) {
+      setFieldErrors((prev) => ({ ...prev, acceptTerms: undefined }));
+    }
   };
 
   return (
@@ -132,31 +156,117 @@ const Register = () => {
         )}
 
         <form onSubmit={handleSubmit}>
-          <input name="name" placeholder="Full Name" onChange={handleChange} />
-          <input name="email" placeholder="Email" onChange={handleChange} />
-          <input
-            type={showPassword ? "text" : "password"}
-            name="password"
-            placeholder="Password"
-            onChange={handleChange}
-          />
-          <input
-            type={showPassword ? "text" : "password"}
-            name="password_confirmation"
-            placeholder="Confirm Password"
-            onChange={handleChange}
-          />
+          <div className="register-formFields">
+            <div className="register-input-container">
+              <input
+                type="text"
+                name="name"
+                value={formData.name}
+                onChange={handleChange}
+                placeholder="Full Name"
+                className={`register-username ${fieldErrors.name ? "error" : ""}`}
+                disabled={loading}
+              />
+              {fieldErrors.name && (
+                <p className="register-field-error">{fieldErrors.name}</p>
+              )}
+            </div>
 
-          <label>
-            <input
-              type="checkbox"
-              checked={formData.acceptTerms}
-              onChange={() => setShowTermsModal(true)}
-            />
-            I agree to Terms
-          </label>
+            <div className="register-input-container">
+              <input
+                type="email"
+                name="email"
+                value={formData.email}
+                onChange={handleChange}
+                placeholder="Email"
+                className={`register-email ${fieldErrors.email ? "error" : ""}`}
+                disabled={loading}
+              />
+              {fieldErrors.email && (
+                <p className="register-field-error">{fieldErrors.email}</p>
+              )}
+            </div>
 
-          <button disabled={loading}>
+            <div className="register-input-container">
+              <div className="register-pass">
+                <input
+                  type={showPassword ? "text" : "password"}
+                  name="password"
+                  value={formData.password}
+                  onChange={handleChange}
+                  placeholder="Password"
+                  className={`register-passwordInput ${
+                    fieldErrors.password ? "error" : ""
+                  }`}
+                  disabled={loading}
+                />
+                <button
+                  type="button"
+                  onClick={togglePasswordVisibility}
+                  className="register-eyeButton"
+                  disabled={loading}
+                >
+                  {showPassword ? (
+                    <EyeSlashIcon className="register-eyeIcon" />
+                  ) : (
+                    <EyeIcon className="register-eyeIcon" />
+                  )}
+                </button>
+              </div>
+              {fieldErrors.password && (
+                <p className="register-field-error">{fieldErrors.password}</p>
+              )}
+            </div>
+
+            <div className="register-input-container">
+              <input
+                type={showPassword ? "text" : "password"}
+                name="password_confirmation"
+                value={formData.password_confirmation}
+                onChange={handleChange}
+                placeholder="Confirm Password"
+                className={`register-cp ${
+                  fieldErrors.password_confirmation ? "error" : ""
+                }`}
+                disabled={loading}
+              />
+              {fieldErrors.password_confirmation && (
+                <p className="register-field-error">
+                  {fieldErrors.password_confirmation}
+                </p>
+              )}
+            </div>
+          </div>
+
+          <div className="register-terms-container">
+            <label className="register-terms">
+              <input
+                type="checkbox"
+                checked={formData.acceptTerms}
+                onChange={(e) => {
+                  if (e.target.checked) {
+                    e.preventDefault();
+                    setShowTermsModal(true);
+                  } else {
+                    setFormData((prev) => ({ ...prev, acceptTerms: false }));
+                  }
+                }}
+                disabled={loading}
+              />
+              <span className="register-text2">
+                I agree to the Terms and Conditions
+              </span>
+            </label>
+            {fieldErrors.acceptTerms && (
+              <p className="register-field-error">{fieldErrors.acceptTerms}</p>
+            )}
+          </div>
+
+          <button
+            type="submit"
+            className="register-register-btn"
+            disabled={loading}
+          >
             {loading ? "Creating Account..." : "Register"}
           </button>
         </form>

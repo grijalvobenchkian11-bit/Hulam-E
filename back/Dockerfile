@@ -1,35 +1,41 @@
-FROM php:8.2-cli
-
-WORKDIR /var/www
+FROM php:8.3-cli
 
 RUN apt-get update && apt-get install -y \
     git \
     unzip \
-    curl \
     libpq-dev \
     libzip-dev \
-    libonig-dev \
-    libxml2-dev \
-    && docker-php-ext-install \
-        pdo \
-        pdo_pgsql \
-        mbstring \
-        zip \
-        xml \
-        bcmath \
-    && apt-get clean \
+    zip \
+    curl \
+    && docker-php-ext-install pdo pdo_pgsql zip \
     && rm -rf /var/lib/apt/lists/*
+
+COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
+
+
+WORKDIR /var/www
+
+
+COPY composer.json composer.lock ./
+
+
+RUN composer install \
+    --no-dev \
+    --no-interaction \
+    --prefer-dist \
+    --optimize-autoloader
+
 
 COPY . .
 
-RUN curl -sS https://getcomposer.org/installer | php -- \
-    --install-dir=/usr/local/bin \
-    --filename=composer
-
-RUN composer install --no-dev --no-interaction --optimize-autoloader
 
 RUN chmod -R 775 storage bootstrap/cache
 
+RUN php artisan config:clear || true \
+ && php artisan route:clear || true \
+ && php artisan view:clear || true
+
+
 EXPOSE 10000
 
-CMD php -S 0.0.0.0:$PORT -t public
+CMD php artisan serve --host=0.0.0.0 --port=${PORT}

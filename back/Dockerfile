@@ -1,6 +1,8 @@
-FROM php:8.2-cli
+FROM php:8.2-fpm
+
 
 WORKDIR /var/www
+
 
 RUN apt-get update && apt-get install -y \
     git \
@@ -21,24 +23,29 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 
-COPY . .
-
-RUN curl -sS https://getcomposer.org/installer | php \
-    -- --install-dir=/usr/local/bin --filename=composer
+COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
 
-RUN composer clear-cache
+COPY composer.json composer.lock ./
 
 RUN composer install \
     --no-dev \
     --no-interaction \
-    --ignore-platform-reqs \
-    --no-autoloader
+    --no-scripts \
+    --prefer-dist
 
 
+COPY . .
 
-RUN chmod -R 775 storage bootstrap/cache
+
+RUN composer dump-autoload --optimize
+
+
+RUN chown -R www-data:www-data storage bootstrap/cache \
+    && chmod -R 775 storage bootstrap/cache
+
 
 EXPOSE 10000
 
-CMD php artisan serve --host=0.0.0.0 --port=10000
+
+CMD ["php-fpm"]

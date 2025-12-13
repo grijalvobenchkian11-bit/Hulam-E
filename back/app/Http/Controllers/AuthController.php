@@ -10,15 +10,17 @@ use Illuminate\Support\Facades\Validator;
 
 class AuthController extends Controller
 {
-    /**
-     * Register a new user
-     */
     public function register(Request $request)
     {
-        // 1️⃣ Validate request
-        $validator = Validator::make($request->all(), [
+        // ✅ Validate explicitly
+        $validator = Validator::make($request->only([
+            'name',
+            'email',
+            'password',
+            'password_confirmation',
+        ]), [
             'name' => 'required|string|max:255',
-            'email' => 'required|string|email|max:255|unique:users,email',
+            'email' => 'required|email|max:255|unique:users,email',
             'password' => 'required|string|min:8|confirmed',
         ]);
 
@@ -28,31 +30,25 @@ class AuthController extends Controller
             ], 422);
         }
 
-        // 2️⃣ Create user with REQUIRED DEFAULTS
+        // ✅ Create user with safe defaults
         $user = User::create([
             'name' => trim($request->name),
             'email' => strtolower(trim($request->email)),
             'password' => Hash::make($request->password),
 
-            // 🔹 REQUIRED FIELDS (IMPORTANT)
+            // Explicit defaults (important)
             'role' => 'user',
             'verified' => false,
             'verification_status' => 'unverified',
-
-            // 🔹 SAFE DEFAULTS
+            'profile_completion' => 0,
             'rating' => 0,
             'total_ratings' => 0,
-            'profile_completion' => 0,
             'is_online' => false,
-            'show_email' => true,
-            'show_contact' => true,
-            'show_social_link' => true,
         ]);
 
-        // 3️⃣ Create Sanctum token
+        // ✅ Create token
         $token = $user->createToken('auth_token')->plainTextToken;
 
-        // 4️⃣ Response
         return response()->json([
             'message' => 'Registration successful',
             'user' => $user,
@@ -60,13 +56,12 @@ class AuthController extends Controller
         ], 201);
     }
 
-    /**
-     * Login user
-     */
     public function login(Request $request)
     {
-        // 1️⃣ Validate request
-        $validator = Validator::make($request->all(), [
+        $validator = Validator::make($request->only([
+            'email',
+            'password'
+        ]), [
             'email' => 'required|email',
             'password' => 'required|string',
         ]);
@@ -77,7 +72,6 @@ class AuthController extends Controller
             ], 422);
         }
 
-        // 2️⃣ Attempt login
         if (!Auth::attempt($request->only('email', 'password'))) {
             return response()->json([
                 'message' => 'The provided credentials are incorrect.'
@@ -86,7 +80,6 @@ class AuthController extends Controller
 
         $user = User::where('email', $request->email)->firstOrFail();
 
-        // 3️⃣ Check account status
         if ($user->verification_status === 'inactive') {
             return response()->json([
                 'error' => 'Account deactivated',
@@ -94,10 +87,6 @@ class AuthController extends Controller
             ], 403);
         }
 
-        // 4️⃣ Update online status
-        $user->setOnline(true);
-
-        // 5️⃣ Create token
         $token = $user->createToken('auth_token')->plainTextToken;
 
         return response()->json([
@@ -107,14 +96,9 @@ class AuthController extends Controller
         ]);
     }
 
-    /**
-     * Logout user
-     */
     public function logout(Request $request)
     {
         $request->user()->currentAccessToken()->delete();
-
-        $request->user()->setOnline(false);
 
         return response()->json([
             'message' => 'Logged out successfully'

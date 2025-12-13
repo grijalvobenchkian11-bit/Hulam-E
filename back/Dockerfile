@@ -48,4 +48,5 @@ RUN chown -R www-data:www-data storage bootstrap/cache \
 EXPOSE 10000
 
 
-CMD ["php-fpm"]
+CMD php -S 0.0.0.0:$PORT -t public
+0.0.0.0

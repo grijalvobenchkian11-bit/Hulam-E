@@ -6,10 +6,12 @@ import { Link, useNavigate } from "react-router-dom";
 import TermsModal from "../PrivacyPolicy/TermsModal";
 import AlertMessage from "../Common/AlertMessage";
 
-const API_URL = process.env.REACT_APP_API_URL; 
+const API_URL = process.env.REACT_APP_API_URL;
 // example: https://hulame-back.onrender.com/api
 
 const Register = () => {
+  const navigate = useNavigate();
+
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -20,7 +22,6 @@ const Register = () => {
 
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
-  const navigate = useNavigate();
   const [alert, setAlert] = useState({ show: false, type: "", message: "" });
   const [fieldErrors, setFieldErrors] = useState({});
   const [showTermsModal, setShowTermsModal] = useState(false);
@@ -30,6 +31,10 @@ const Register = () => {
     setTimeout(() => {
       setAlert({ show: false, type: "", message: "" });
     }, 5000);
+  };
+
+  const togglePasswordVisibility = () => {
+    setShowPassword((prev) => !prev);
   };
 
   const validateForm = () => {
@@ -47,10 +52,6 @@ const Register = () => {
 
     setFieldErrors(errors);
     return Object.keys(errors).length === 0;
-  };
-
-  const togglePasswordVisibility = () => {
-    setShowPassword((prev) => !prev);
   };
 
   const handleChange = (e) => {
@@ -81,7 +82,7 @@ const Register = () => {
     setLoading(true);
 
     try {
-      await axios.post(
+      const response = await axios.post(
         `${API_URL}/auth/register`,
         {
           name: formData.name.trim(),
@@ -93,7 +94,7 @@ const Register = () => {
           headers: {
             "Content-Type": "application/json",
           },
-          withCredentials: false, // IMPORTANT for token-based auth
+          withCredentials: false, // ✅ token-based auth
         }
       );
 
@@ -108,7 +109,10 @@ const Register = () => {
         setFieldErrors(error.response.data.errors || {});
         showAlert("error", "Validation failed.");
       } else {
-        showAlert("error", "Registration failed. Please try again.");
+        showAlert(
+          "error",
+          error.response?.data?.message || "Registration failed."
+        );
       }
     } finally {
       setLoading(false);
@@ -164,7 +168,9 @@ const Register = () => {
                 value={formData.name}
                 onChange={handleChange}
                 placeholder="Full Name"
-                className={`register-username ${fieldErrors.name ? "error" : ""}`}
+                className={`register-username ${
+                  fieldErrors.name ? "error" : ""
+                }`}
                 disabled={loading}
               />
               {fieldErrors.name && (
@@ -179,7 +185,9 @@ const Register = () => {
                 value={formData.email}
                 onChange={handleChange}
                 placeholder="Email"
-                className={`register-email ${fieldErrors.email ? "error" : ""}`}
+                className={`register-email ${
+                  fieldErrors.email ? "error" : ""
+                }`}
                 disabled={loading}
               />
               {fieldErrors.email && (
@@ -214,7 +222,9 @@ const Register = () => {
                 </button>
               </div>
               {fieldErrors.password && (
-                <p className="register-field-error">{fieldErrors.password}</p>
+                <p className="register-field-error">
+                  {fieldErrors.password}
+                </p>
               )}
             </div>
 
@@ -248,7 +258,10 @@ const Register = () => {
                     e.preventDefault();
                     setShowTermsModal(true);
                   } else {
-                    setFormData((prev) => ({ ...prev, acceptTerms: false }));
+                    setFormData((prev) => ({
+                      ...prev,
+                      acceptTerms: false,
+                    }));
                   }
                 }}
                 disabled={loading}
@@ -258,7 +271,9 @@ const Register = () => {
               </span>
             </label>
             {fieldErrors.acceptTerms && (
-              <p className="register-field-error">{fieldErrors.acceptTerms}</p>
+              <p className="register-field-error">
+                {fieldErrors.acceptTerms}
+              </p>
             )}
           </div>
 

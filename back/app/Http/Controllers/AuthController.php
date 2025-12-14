@@ -13,19 +13,26 @@ class AuthController extends Controller
      * REGISTER
      */
     public function register(Request $request)
-    {
-        $validator = Validator::make($request->all(), [
-            'name'                  => 'required|string|max:255',
-            'email'                 => 'required|email|max:255|unique:users,email',
-            'password'              => 'required|string|min:8',
-            'password_confirmation' => 'required|same:password',
-        ]);
+{
+    $validated = $request->validate([
+        'name' => 'required|string|max:255',
+        'email' => 'required|email|unique:users',
+        'password' => 'required|min:8|confirmed',
+    ]);
 
-        if ($validator->fails()) {
-            return response()->json([
-                'errors' => $validator->errors()
-            ], 422);
-        }
+    $user = User::create([
+        'name' => $validated['name'],
+        'email' => $validated['email'],
+        'password' => Hash::make($validated['password']),
+        // everything else comes from DB defaults
+    ]);
+
+    return response()->json([
+        'user' => $user,
+        'token' => $user->createToken('auth')->plainTextToken,
+    ], 201);
+}
+
 
         try {
             $user = User::create([

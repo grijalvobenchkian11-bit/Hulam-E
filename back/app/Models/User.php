@@ -86,20 +86,6 @@ class User extends Authenticatable
         ];
     }
     
-    /**
-     * Boot method to set defaults for user creation
-     */
-    protected static function boot()
-    {
-        parent::boot();
-        
-        static::creating(function ($user) {
-            // Ensure verification_status is set to 'unverified' for new users
-            if (empty($user->verification_status)) {
-                $user->verification_status = 'unverified';
-            }
-        });
-    }
     
     public function rentals()
     {

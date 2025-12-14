@@ -1,13 +1,12 @@
 import React, { useState, useEffect } from "react";
 import "./Register.css";
-import axios from "axios";
 import { EyeIcon, EyeSlashIcon } from "@heroicons/react/24/solid";
 import { Link, useNavigate } from "react-router-dom";
 import TermsModal from "../PrivacyPolicy/TermsModal";
 import AlertMessage from "../Common/AlertMessage";
 
-const API_URL = process.env.REACT_APP_API_URL;
-// example: https://hulame-back.onrender.com/api
+// ✅ IMPORT YOUR CENTRAL API
+import { authAPI } from "../../services/api";
 
 const Register = () => {
   const navigate = useNavigate();
@@ -71,6 +70,7 @@ const Register = () => {
     }
   };
 
+  // ✅ FIXED SUBMIT HANDLER
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -82,21 +82,12 @@ const Register = () => {
     setLoading(true);
 
     try {
-      const response = await axios.post(
-        `${API_URL}/auth/register`,
-        {
-          name: formData.name.trim(),
-          email: formData.email.trim().toLowerCase(),
-          password: formData.password,
-          password_confirmation: formData.password_confirmation,
-        },
-        {
-          headers: {
-            "Content-Type": "application/json",
-          },
-          withCredentials: false, // ✅ token-based auth
-        }
-      );
+      await authAPI.register({
+        name: formData.name.trim(),
+        email: formData.email.trim().toLowerCase(),
+        password: formData.password,
+        password_confirmation: formData.password_confirmation,
+      });
 
       showAlert("success", "Registration successful! Redirecting...");
       setTimeout(() => navigate("/rental-section"), 1500);
@@ -168,9 +159,7 @@ const Register = () => {
                 value={formData.name}
                 onChange={handleChange}
                 placeholder="Full Name"
-                className={`register-username ${
-                  fieldErrors.name ? "error" : ""
-                }`}
+                className={fieldErrors.name ? "error" : ""}
                 disabled={loading}
               />
               {fieldErrors.name && (
@@ -185,9 +174,7 @@ const Register = () => {
                 value={formData.email}
                 onChange={handleChange}
                 placeholder="Email"
-                className={`register-email ${
-                  fieldErrors.email ? "error" : ""
-                }`}
+                className={fieldErrors.email ? "error" : ""}
                 disabled={loading}
               />
               {fieldErrors.email && (
@@ -203,28 +190,19 @@ const Register = () => {
                   value={formData.password}
                   onChange={handleChange}
                   placeholder="Password"
-                  className={`register-passwordInput ${
-                    fieldErrors.password ? "error" : ""
-                  }`}
+                  className={fieldErrors.password ? "error" : ""}
                   disabled={loading}
                 />
                 <button
                   type="button"
                   onClick={togglePasswordVisibility}
-                  className="register-eyeButton"
                   disabled={loading}
                 >
-                  {showPassword ? (
-                    <EyeSlashIcon className="register-eyeIcon" />
-                  ) : (
-                    <EyeIcon className="register-eyeIcon" />
-                  )}
+                  {showPassword ? <EyeSlashIcon /> : <EyeIcon />}
                 </button>
               </div>
               {fieldErrors.password && (
-                <p className="register-field-error">
-                  {fieldErrors.password}
-                </p>
+                <p className="register-field-error">{fieldErrors.password}</p>
               )}
             </div>
 
@@ -235,9 +213,9 @@ const Register = () => {
                 value={formData.password_confirmation}
                 onChange={handleChange}
                 placeholder="Confirm Password"
-                className={`register-cp ${
+                className={
                   fieldErrors.password_confirmation ? "error" : ""
-                }`}
+                }
                 disabled={loading}
               />
               {fieldErrors.password_confirmation && (
@@ -249,7 +227,7 @@ const Register = () => {
           </div>
 
           <div className="register-terms-container">
-            <label className="register-terms">
+            <label>
               <input
                 type="checkbox"
                 checked={formData.acceptTerms}
@@ -266,9 +244,7 @@ const Register = () => {
                 }}
                 disabled={loading}
               />
-              <span className="register-text2">
-                I agree to the Terms and Conditions
-              </span>
+              I agree to the Terms and Conditions
             </label>
             {fieldErrors.acceptTerms && (
               <p className="register-field-error">
@@ -277,11 +253,7 @@ const Register = () => {
             )}
           </div>
 
-          <button
-            type="submit"
-            className="register-register-btn"
-            disabled={loading}
-          >
+          <button type="submit" disabled={loading}>
             {loading ? "Creating Account..." : "Register"}
           </button>
         </form>

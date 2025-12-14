@@ -5,7 +5,7 @@ import { Link, useNavigate } from "react-router-dom";
 import TermsModal from "../PrivacyPolicy/TermsModal";
 import AlertMessage from "../Common/AlertMessage";
 
-// ✅ IMPORT YOUR CENTRAL API
+// ✅ USE CENTRAL API (NO AXIOS HERE)
 import { authAPI } from "../../services/api";
 
 const Register = () => {
@@ -70,7 +70,6 @@ const Register = () => {
     }
   };
 
-  // ✅ FIXED SUBMIT HANDLER
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -82,6 +81,7 @@ const Register = () => {
     setLoading(true);
 
     try {
+      // ✅ CORRECT API CALL (NO UI CHANGE)
       await authAPI.register({
         name: formData.name.trim(),
         email: formData.email.trim().toLowerCase(),
@@ -159,7 +159,7 @@ const Register = () => {
                 value={formData.name}
                 onChange={handleChange}
                 placeholder="Full Name"
-                className={fieldErrors.name ? "error" : ""}
+                className={`register-username ${fieldErrors.name ? "error" : ""}`}
                 disabled={loading}
               />
               {fieldErrors.name && (
@@ -174,7 +174,7 @@ const Register = () => {
                 value={formData.email}
                 onChange={handleChange}
                 placeholder="Email"
-                className={fieldErrors.email ? "error" : ""}
+                className={`register-email ${fieldErrors.email ? "error" : ""}`}
                 disabled={loading}
               />
               {fieldErrors.email && (
@@ -190,15 +190,22 @@ const Register = () => {
                   value={formData.password}
                   onChange={handleChange}
                   placeholder="Password"
-                  className={fieldErrors.password ? "error" : ""}
+                  className={`register-passwordInput ${
+                    fieldErrors.password ? "error" : ""
+                  }`}
                   disabled={loading}
                 />
                 <button
                   type="button"
                   onClick={togglePasswordVisibility}
+                  className="register-eyeButton"
                   disabled={loading}
                 >
-                  {showPassword ? <EyeSlashIcon /> : <EyeIcon />}
+                  {showPassword ? (
+                    <EyeSlashIcon className="register-eyeIcon" />
+                  ) : (
+                    <EyeIcon className="register-eyeIcon" />
+                  )}
                 </button>
               </div>
               {fieldErrors.password && (
@@ -213,9 +220,9 @@ const Register = () => {
                 value={formData.password_confirmation}
                 onChange={handleChange}
                 placeholder="Confirm Password"
-                className={
+                className={`register-cp ${
                   fieldErrors.password_confirmation ? "error" : ""
-                }
+                }`}
                 disabled={loading}
               />
               {fieldErrors.password_confirmation && (
@@ -227,7 +234,7 @@ const Register = () => {
           </div>
 
           <div className="register-terms-container">
-            <label>
+            <label className="register-terms">
               <input
                 type="checkbox"
                 checked={formData.acceptTerms}
@@ -244,7 +251,9 @@ const Register = () => {
                 }}
                 disabled={loading}
               />
-              I agree to the Terms and Conditions
+              <span className="register-text2">
+                I agree to the Terms and Conditions
+              </span>
             </label>
             {fieldErrors.acceptTerms && (
               <p className="register-field-error">
@@ -253,7 +262,11 @@ const Register = () => {
             )}
           </div>
 
-          <button type="submit" disabled={loading}>
+          <button
+            type="submit"
+            className="register-register-btn"
+            disabled={loading}
+          >
             {loading ? "Creating Account..." : "Register"}
           </button>
         </form>

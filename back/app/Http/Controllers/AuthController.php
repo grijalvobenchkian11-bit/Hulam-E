@@ -4,7 +4,6 @@ namespace App\Http\Controllers;
 
 use App\Models\User;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
 
@@ -12,13 +11,7 @@ class AuthController extends Controller
 {
     public function register(Request $request)
     {
-        // ✅ Validate explicitly
-        $validator = Validator::make($request->only([
-            'name',
-            'email',
-            'password',
-            'password_confirmation',
-        ]), [
+        $validator = Validator::make($request->all(), [
             'name' => 'required|string|max:255',
             'email' => 'required|email|max:255|unique:users,email',
             'password' => 'required|string|min:8|confirmed',
@@ -30,40 +23,35 @@ class AuthController extends Controller
             ], 422);
         }
 
-        // ✅ Create user with safe defaults
-        $user = User::create([
-            'name' => trim($request->name),
-            'email' => strtolower(trim($request->email)),
-            'password' => Hash::make($request->password),
+        try {
+            $user = User::create([
+                'name'     => $request->name,
+                'email'    => $request->email,
+                'password' => Hash::make($request->password),
+                // DO NOT set role, verified, verification_status, etc
+            ]);
+        } catch (\Throwable $e) {
+            // This is critical since you have no shell access
+            return response()->json([
+                'message' => 'User registration failed',
+                'error'   => $e->getMessage(),
+            ], 500);
+        }
 
-            // Explicit defaults (important)
-            'role' => 'user',
-            'verified' => false,
-            'verification_status' => 'unverified',
-            'profile_completion' => 0,
-            'rating' => 0,
-            'total_ratings' => 0,
-            'is_online' => false,
-        ]);
-
-        // ✅ Create token
         $token = $user->createToken('auth_token')->plainTextToken;
 
         return response()->json([
+            'user'    => $user,
+            'token'   => $token,
             'message' => 'Registration successful',
-            'user' => $user,
-            'token' => $token,
         ], 201);
     }
 
     public function login(Request $request)
     {
-        $validator = Validator::make($request->only([
-            'email',
-            'password'
-        ]), [
-            'email' => 'required|email',
-            'password' => 'required|string',
+        $validator = Validator::make($request->all(), [
+            'email'    => 'required|email',
+            'password' => 'required',
         ]);
 
         if ($validator->fails()) {
@@ -72,27 +60,19 @@ class AuthController extends Controller
             ], 422);
         }
 
-        if (!Auth::attempt($request->only('email', 'password'))) {
+        if (!auth()->attempt($request->only('email', 'password'))) {
             return response()->json([
-                'message' => 'The provided credentials are incorrect.'
+                'message' => 'Invalid credentials'
             ], 401);
         }
 
-        $user = User::where('email', $request->email)->firstOrFail();
-
-        if ($user->verification_status === 'inactive') {
-            return response()->json([
-                'error' => 'Account deactivated',
-                'message' => 'Your account has been deactivated. Please contact support.'
-            ], 403);
-        }
-
+        $user = auth()->user();
         $token = $user->createToken('auth_token')->plainTextToken;
 
         return response()->json([
+            'user'    => $user,
+            'token'   => $token,
             'message' => 'Login successful',
-            'user' => $user,
-            'token' => $token,
         ]);
     }
 

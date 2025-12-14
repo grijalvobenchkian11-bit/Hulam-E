@@ -2,7 +2,7 @@ import axios from 'axios';
 
 // Create axios instance with base configuration
 const api = axios.create({
-  baseURL: 'http://localhost:8000/api',
+baseURL: 'https://hulam-e-epho.onrender.com/api',
   headers: {
     'Content-Type': 'application/json',
     'Accept': 'application/json',
@@ -152,14 +152,14 @@ api.interceptors.response.use(
   }
 );
 
-// Auth endpoints
 export const authAPI = {
-  register: (userData) => api.post('/api/register', userData),
-  login: (credentials) => api.post('/auth/login', credentials),
-  logout: () => api.post('/auth/logout'),
+  register: (userData) => api.post('/register', userData),
+  login: (credentials) => api.post('/login', credentials),
+  logout: () => api.post('/logout'),
   getCurrentUser: () => api.get('/user'),
-  healthCheck: () => api.get('/test'), // Simple health check endpoint
+  healthCheck: () => api.get('/test'),
 };
+
 
 // User endpoints
 export const userAPI = {

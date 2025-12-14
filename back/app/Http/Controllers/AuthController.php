@@ -9,12 +9,16 @@ use Illuminate\Support\Facades\Validator;
 
 class AuthController extends Controller
 {
+    /**
+     * REGISTER
+     */
     public function register(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'name' => 'required|string|max:255',
-            'email' => 'required|email|max:255|unique:users,email',
-            'password' => 'required|string|min:8|confirmed',
+            'name'                  => 'required|string|max:255',
+            'email'                 => 'required|email|max:255|unique:users,email',
+            'password'              => 'required|string|min:8',
+            'password_confirmation' => 'required|same:password',
         ]);
 
         if ($validator->fails()) {
@@ -25,28 +29,40 @@ class AuthController extends Controller
 
         try {
             $user = User::create([
-                'name'     => $request->name,
-                'email'    => $request->email,
+                'name'  => trim($request->name),
+                'email' => strtolower(trim($request->email)),
                 'password' => Hash::make($request->password),
-                // DO NOT set role, verified, verification_status, etc
+
+                // 🔐 EXPLICIT DEFAULTS (OPTION 2)
+                'role' => 'user',
+                'verified' => false,
+                'profile_completion' => 0,
+                'verification_status' => 'unverified',
             ]);
-        } catch (\Throwable $e) {
-            // This is critical since you have no shell access
+
+            $token = $user->createToken('auth_token')->plainTextToken;
+
             return response()->json([
-                'message' => 'User registration failed',
-                'error'   => $e->getMessage(),
+                'message' => 'Registration successful',
+                'user' => $user,
+                'token' => $token,
+            ], 201);
+
+        } catch (\Throwable $e) {
+            // 👀 CRITICAL for Render debugging
+            \Log::error('REGISTER FAILED', [
+                'error' => $e->getMessage(),
+            ]);
+
+            return response()->json([
+                'message' => 'Registration failed',
             ], 500);
         }
-
-        $token = $user->createToken('auth_token')->plainTextToken;
-
-        return response()->json([
-            'user'    => $user,
-            'token'   => $token,
-            'message' => 'Registration successful',
-        ], 201);
     }
 
+    /**
+     * LOGIN
+     */
     public function login(Request $request)
     {
         $validator = Validator::make($request->all(), [
@@ -60,22 +76,26 @@ class AuthController extends Controller
             ], 422);
         }
 
-        if (!auth()->attempt($request->only('email', 'password'))) {
+        $user = User::where('email', $request->email)->first();
+
+        if (!$user || !Hash::check($request->password, $user->password)) {
             return response()->json([
                 'message' => 'Invalid credentials'
             ], 401);
         }
 
-        $user = auth()->user();
         $token = $user->createToken('auth_token')->plainTextToken;
 
         return response()->json([
-            'user'    => $user,
-            'token'   => $token,
             'message' => 'Login successful',
+            'user' => $user,
+            'token' => $token,
         ]);
     }
 
+    /**
+     * LOGOUT
+     */
     public function logout(Request $request)
     {
         $request->user()->currentAccessToken()->delete();
